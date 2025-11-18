@@ -44,8 +44,9 @@ impl Config {
                     .unwrap_or(3000),
             },
             database: DatabaseConfig {
-                url: env::var("DATABASE_URL")
-                    .unwrap_or_else(|_| "mysql://root:2214380963Wx!!@localhost:3306/axum_db".to_string()),
+                url: env::var("DATABASE_URL").unwrap_or_else(|_| {
+                    "mysql://root:2214380963Wx!!@localhost:3306/axum_db".to_string()
+                }),
                 max_connections: env::var("DATABASE_MAX_CONNECTIONS")
                     .unwrap_or_else(|_| "10".to_string())
                     .parse()
@@ -62,4 +63,3 @@ impl Config {
         })
     }
 }
-

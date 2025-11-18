@@ -6,6 +6,7 @@ pub mod entities;
 pub mod errors;
 pub mod extractors;
 pub mod jwt;
+pub mod logging;
 pub mod middleware;
 pub mod models;
 pub mod repositories;

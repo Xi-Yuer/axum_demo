@@ -15,7 +15,7 @@ pub async fn list_articles_simple(
     State(state): State<AppState>,
     Query(pagination): Query<Pagination>,
     optional_user: OptionalAuthUser,
-) -> Json<ApiResponse<Vec<ArticleResponse>>> {
+) -> ApiResponse<Vec<ArticleResponse>> {
     let user_id = optional_user.user_id();
     let result: Result<Vec<ArticleResponse>> = async {
         let articles = article_service::list_articles(&state.db, pagination, user_id).await?;
@@ -23,7 +23,7 @@ pub async fn list_articles_simple(
     }
     .await;
 
-    Json(result.into())
+    result.into()
 }
 
 /// 获取文章列表（推荐方式：使用 ? 运算符）
@@ -31,17 +31,14 @@ pub async fn list_articles(
     State(state): State<AppState>,
     Query(pagination): Query<Pagination>,
     optional_user: OptionalAuthUser,
-) -> Result<Json<ApiResponse<serde_json::Value>>> {
-    let result = article_service::list_articles(
-        &state.db,
-        pagination,
-        optional_user.user_id(),
-    ).await?;
+) -> Result<ApiResponse<serde_json::Value>> {
+    let result =
+        article_service::list_articles(&state.db, pagination, optional_user.user_id()).await?;
 
-    Ok(Json(ApiResponse::success(serde_json::json!({
+    Ok(ApiResponse::success(serde_json::json!({
         "list": result.list,
         "pagination": result.pagination,
-    }))))
+    })))
 }
 
 /// 根据 ID 获取文章（简单方式）
@@ -49,11 +46,11 @@ pub async fn get_article_simple(
     State(state): State<AppState>,
     Path(article_id): Path<Uuid>,
     _optional_user: OptionalAuthUser,
-) -> Json<ApiResponse<ArticleResponse>> {
+) -> ApiResponse<ArticleResponse> {
     let result: Result<ArticleResponse> =
         async { article_service::get_article_by_id(&state.db, article_id).await }.await;
 
-    Json(result.into())
+    result.into()
 }
 
 /// 根据 ID 获取文章（推荐方式）
@@ -61,10 +58,10 @@ pub async fn get_article(
     State(state): State<AppState>,
     Path(article_id): Path<Uuid>,
     _optional_user: OptionalAuthUser,
-) -> Result<Json<ApiResponse<ArticleResponse>>> {
+) -> Result<ApiResponse<ArticleResponse>> {
     let article = article_service::get_article_by_id(&state.db, article_id).await?;
 
-    Ok(Json(ApiResponse::success(article)))
+    Ok(ApiResponse::success(article))
 }
 
 /// 创建文章
@@ -72,13 +69,10 @@ pub async fn create_article(
     State(state): State<AppState>,
     optional_user: OptionalAuthUser,
     Json(payload): Json<CreateArticleRequest>,
-) -> Result<Json<ApiResponse<ArticleResponse>>> {
+) -> Result<ApiResponse<ArticleResponse>> {
     let user = optional_user.require()?;
 
     let article = article_service::create_article(&state.db, user.user_id, payload).await?;
 
-    Ok(Json(ApiResponse::success_with_message(
-        article,
-        "文章创建成功",
-    )))
+    Ok(ApiResponse::success_with_message(article, "文章创建成功"))
 }
