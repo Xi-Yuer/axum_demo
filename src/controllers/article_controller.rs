@@ -1,5 +1,5 @@
 use crate::errors::Result;
-use crate::extractors::{OptionalAuthUser, Pagination};
+use crate::extractors::{AuthUser, OptionalAuthUser, Pagination};
 use crate::models::{ArticleResponse, CreateArticleRequest};
 use crate::response::ApiResponse;
 use crate::services::article_service;
@@ -64,15 +64,13 @@ pub async fn get_article(
     Ok(ApiResponse::success(article))
 }
 
-/// 创建文章
+/// 创建文章（需要认证）
 pub async fn create_article(
     State(state): State<AppState>,
-    optional_user: OptionalAuthUser,
+    auth_user: AuthUser,  // 直接使用 AuthUser，更清晰
     Json(payload): Json<CreateArticleRequest>,
 ) -> Result<ApiResponse<ArticleResponse>> {
-    let user = optional_user.require()?;
-
-    let article = article_service::create_article(&state.db, user.user_id, payload).await?;
+    let article = article_service::create_article(&state.db, auth_user.user_id, payload).await?;
 
     Ok(ApiResponse::success_with_message(article, "文章创建成功"))
 }

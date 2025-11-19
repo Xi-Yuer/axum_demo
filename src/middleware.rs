@@ -1,7 +1,4 @@
-use crate::response::ApiResponse;
-use axum::http::{HeaderValue, StatusCode};
-use axum::response::IntoResponse;
-use axum::{extract::Request, middleware::Next, response::Response, Json};
+use axum::http::HeaderValue;
 use tower_http::cors::CorsLayer;
 
 /// 创建配置好的 TraceLayer 中间件
@@ -34,24 +31,6 @@ macro_rules! trace_layer {
                 tracing::error!("请求失败 - 错误: {:?} - 耗时: {:?}", _error, _latency);
             })
     };
-}
-
-/// 认证中间件（示例，实际使用提取器更灵活）
-pub async fn auth_middleware(request: Request, next: Next) -> Response {
-    // 检查是否需要认证
-    let auth_header = request.headers().get("authorization");
-
-    if auth_header.is_none() && !is_public_path(request.uri().path()) {
-        let error_response: ApiResponse<()> = ApiResponse::error(401, "需要认证");
-        return (StatusCode::UNAUTHORIZED, Json(error_response)).into_response();
-    }
-
-    next.run(request).await
-}
-
-/// 判断是否为公开路径
-fn is_public_path(path: &str) -> bool {
-    path.starts_with("/api") || path == "/" || path == "/health"
 }
 
 /// 创建 CORS 中间件 Layer
