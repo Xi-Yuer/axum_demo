@@ -24,7 +24,7 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 anyhow = "1.0"
 thiserror = "1.0"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "chrono"] }
 dotenv = "0.15"
 bcrypt = "0.15"
 jsonwebtoken = "9.0"

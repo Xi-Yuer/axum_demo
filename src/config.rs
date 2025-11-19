@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use std::env;
+use std::time::Duration;
 
 /// 应用配置
 #[derive(Debug, Clone, Deserialize)]
@@ -21,6 +22,11 @@ pub struct ServerConfig {
 pub struct DatabaseConfig {
     pub url: String,
     pub max_connections: u32,
+    pub connection_timeout: Duration,
+    pub query_timeout: Duration,
+    pub idle_timeout: Duration,
+    pub max_lifetime: Duration,
+    pub min_connections: u32,
 }
 
 /// JWT 配置
@@ -44,13 +50,17 @@ impl Config {
                     .unwrap_or(3000),
             },
             database: DatabaseConfig {
-                url: env::var("DATABASE_URL").unwrap_or_else(|_| {
-                    "mysql://root:2214380963Wx!!@localhost:3306/axum_db".to_string()
-                }),
+                url: env::var("DATABASE_URL")
+                    .unwrap_or_else(|_| "mysql://root:password@localhost:3306/axum_db".to_string()),
                 max_connections: env::var("DATABASE_MAX_CONNECTIONS")
                     .unwrap_or_else(|_| "10".to_string())
                     .parse()
                     .unwrap_or(10),
+                connection_timeout: Duration::from_secs(10),
+                query_timeout: Duration::from_secs(10),
+                idle_timeout: Duration::from_secs(10),
+                max_lifetime: Duration::from_secs(10),
+                min_connections: 10,
             },
             jwt: JwtConfig {
                 secret: env::var("JWT_SECRET")
