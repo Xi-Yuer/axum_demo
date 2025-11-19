@@ -1,3 +1,4 @@
+use crate::{utils::deserialize_status_code, utils::serialize_status_code};
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -21,7 +22,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ApiResponse<T> {
     /// 业务状态码（200 表示成功，其他表示失败）
-    pub code: u16,
+    #[serde(
+        serialize_with = "serialize_status_code",
+        deserialize_with = "deserialize_status_code"
+    )]
+    pub code: StatusCode,
     /// 响应消息
     pub message: String,
     /// 响应数据（可选）
@@ -35,7 +40,7 @@ impl<T> ApiResponse<T> {
     /// 创建成功响应
     pub fn success(data: T) -> Self {
         Self {
-            code: 200,
+            code: StatusCode::OK,
             message: "success".to_string(),
             data: Some(data),
             timestamp: Self::get_timestamp(),
@@ -45,7 +50,7 @@ impl<T> ApiResponse<T> {
     /// 创建成功响应（带自定义消息）
     pub fn success_with_message(data: T, message: impl Into<String>) -> Self {
         Self {
-            code: 200,
+            code: StatusCode::OK,
             message: message.into(),
             data: Some(data),
             timestamp: Self::get_timestamp(),
@@ -55,7 +60,7 @@ impl<T> ApiResponse<T> {
     /// 创建成功响应（无数据）
     pub fn success_no_data() -> Self {
         Self {
-            code: 200,
+            code: StatusCode::OK,
             message: "success".to_string(),
             data: None,
             timestamp: Self::get_timestamp(),
@@ -63,7 +68,7 @@ impl<T> ApiResponse<T> {
     }
 
     /// 创建失败响应
-    pub fn error(code: u16, message: impl Into<String>) -> Self {
+    pub fn error(code: StatusCode, message: impl Into<String>) -> Self {
         Self {
             code,
             message: message.into(),
@@ -86,20 +91,7 @@ where
     T: Serialize,
 {
     fn into_response(self) -> Response {
-        // 根据 code 设置 HTTP 状态码
-        let status = match self.code {
-            200 => StatusCode::OK,
-            201 => StatusCode::CREATED,
-            400 => StatusCode::BAD_REQUEST,
-            401 => StatusCode::UNAUTHORIZED,
-            403 => StatusCode::FORBIDDEN,
-            404 => StatusCode::NOT_FOUND,
-            422 => StatusCode::UNPROCESSABLE_ENTITY,
-            500 => StatusCode::INTERNAL_SERVER_ERROR,
-            _ => StatusCode::OK, // 默认使用 OK，但 code 字段会反映真实状态
-        };
-
-        (status, Json(self)).into_response()
+        (self.code, Json(self)).into_response()
     }
 }
 
@@ -111,7 +103,7 @@ where
     fn from(result: Result<T, E>) -> Self {
         match result {
             Ok(data) => ApiResponse::success(data),
-            Err(e) => ApiResponse::error(500, format!("{}", e)),
+            Err(e) => ApiResponse::error(StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
         }
     }
 }
@@ -127,6 +119,6 @@ pub fn success_with_message<T>(data: T, message: impl Into<String>) -> ApiRespon
 }
 
 /// 辅助函数：快速创建失败响应
-pub fn error(code: u16, message: impl Into<String>) -> ApiResponse<()> {
+pub fn error(code: StatusCode, message: impl Into<String>) -> ApiResponse<()> {
     ApiResponse::error(code, message)
 }

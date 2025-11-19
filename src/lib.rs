@@ -13,6 +13,7 @@ pub mod repositories;
 pub mod response;
 pub mod routes;
 pub mod services;
+pub mod utils;
 
 use axum::extract::FromRef;
 use sea_orm::DatabaseConnection;

@@ -1,10 +1,10 @@
+use crate::response::ApiResponse;
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
 use thiserror::Error;
-use crate::response::ApiResponse;
 
 /// 应用错误类型
 #[derive(Error, Debug)]
@@ -36,19 +36,37 @@ pub enum AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (code, message, status) = match self {
-            AppError::Database(e) => {
-                tracing::error!("数据库错误: {}", e);
-                (500, "数据库操作失败".to_string(), StatusCode::INTERNAL_SERVER_ERROR)
-            }
-            AppError::NotFound => (404, "资源未找到".to_string(), StatusCode::NOT_FOUND),
-            AppError::Unauthorized => (401, "未授权".to_string(), StatusCode::UNAUTHORIZED),
-            AppError::Forbidden => (403, "禁止访问".to_string(), StatusCode::FORBIDDEN),
-            AppError::Validation(msg) => (400, msg, StatusCode::BAD_REQUEST),
-            AppError::Internal(e) => {
-                tracing::error!("内部错误: {}", e);
-                (500, "内部服务器错误".to_string(), StatusCode::INTERNAL_SERVER_ERROR)
-            }
-            AppError::Jwt(msg) => (401, format!("JWT 错误: {}", msg), StatusCode::UNAUTHORIZED),
+            AppError::Database(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                e.to_string(),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            AppError::NotFound => (
+                StatusCode::NOT_FOUND,
+                "资源未找到".to_string(),
+                StatusCode::NOT_FOUND,
+            ),
+            AppError::Unauthorized => (
+                StatusCode::UNAUTHORIZED,
+                "未授权".to_string(),
+                StatusCode::UNAUTHORIZED,
+            ),
+            AppError::Forbidden => (
+                StatusCode::FORBIDDEN,
+                "禁止访问".to_string(),
+                StatusCode::FORBIDDEN,
+            ),
+            AppError::Validation(msg) => (StatusCode::BAD_REQUEST, msg, StatusCode::BAD_REQUEST),
+            AppError::Internal(e) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                e.to_string(),
+                StatusCode::INTERNAL_SERVER_ERROR,
+            ),
+            AppError::Jwt(msg) => (
+                StatusCode::UNAUTHORIZED,
+                format!("JWT 错误: {}", msg),
+                StatusCode::UNAUTHORIZED,
+            ),
         };
 
         let response = ApiResponse::<()>::error(code, message);
@@ -58,4 +76,3 @@ impl IntoResponse for AppError {
 
 /// Result 类型别名
 pub type Result<T> = std::result::Result<T, AppError>;
-
