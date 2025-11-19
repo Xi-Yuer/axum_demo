@@ -4,6 +4,7 @@ use axum::{
 };
 use crate::controllers::{auth_controller, health_controller, user_controller, article_controller};
 use crate::AppState;
+use crate::middleware::{auth_middleware, create_cors_layer};
 use crate::trace_layer;
 
 /// 创建应用路由
@@ -36,7 +37,9 @@ pub fn create_router(state: AppState) -> Router {
 
         // 应用中间件
         // TraceLayer 提供了完整的 HTTP 请求追踪功能
+        .layer(create_cors_layer())
         .layer(trace_layer!())
+        .layer(axum::middleware::from_fn(auth_middleware))
 
         // 状态共享
         .with_state(state)

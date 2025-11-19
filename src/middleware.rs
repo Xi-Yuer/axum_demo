@@ -1,13 +1,15 @@
-use axum::{extract::Request, http::HeaderValue, middleware::Next, response::Response};
-use tower::ServiceBuilder;
-use tower_http::{compression::CompressionLayer, cors::CorsLayer, trace::TraceLayer};
+use crate::response::ApiResponse;
+use axum::http::{HeaderValue, StatusCode};
+use axum::response::IntoResponse;
+use axum::{extract::Request, middleware::Next, response::Response, Json};
+use tower_http::cors::CorsLayer;
 
 /// 创建配置好的 TraceLayer 中间件
 /// TraceLayer 提供了完整的 HTTP 请求追踪功能，包括：
 /// - 请求开始日志
 /// - 响应完成日志（包含状态码和耗时）
 /// - 错误日志
-/// 
+///
 /// 注意：由于 TraceLayer 的类型非常复杂，这里使用宏来简化使用
 /// 在 routes.rs 中使用 axum_demo::trace_layer!() 来调用
 #[macro_export]
@@ -40,11 +42,8 @@ pub async fn auth_middleware(request: Request, next: Next) -> Response {
     let auth_header = request.headers().get("authorization");
 
     if auth_header.is_none() && !is_public_path(request.uri().path()) {
-        return Response::builder()
-            .status(axum::http::StatusCode::UNAUTHORIZED)
-            .body("需要认证".into())
-            .unwrap()
-            .into();
+        let error_response: ApiResponse<()> = ApiResponse::error(401, "需要认证");
+        return (StatusCode::UNAUTHORIZED, Json(error_response)).into_response();
     }
 
     next.run(request).await
@@ -52,28 +51,24 @@ pub async fn auth_middleware(request: Request, next: Next) -> Response {
 
 /// 判断是否为公开路径
 fn is_public_path(path: &str) -> bool {
-    path.starts_with("/api/auth") || path == "/" || path == "/health"
+    path.starts_with("/api") || path == "/" || path == "/health"
 }
 
-/// 创建中间件栈（示例，当前未使用）
-/// 如果需要使用，可以在路由中通过 .layer() 方法应用
-/// 注意：ServiceBuilder 的类型会随着添加的 layer 而变化，所以这里不指定具体返回类型
-pub fn create_middleware_stack() -> impl tower::Layer<axum::Router> {
-    ServiceBuilder::new()
-        .layer(TraceLayer::new_for_http())
-        .layer(CompressionLayer::new())
-        .layer(
-            CorsLayer::new()
-                .allow_origin("*".parse::<HeaderValue>().unwrap())
-                .allow_methods([
-                    axum::http::Method::GET,
-                    axum::http::Method::POST,
-                    axum::http::Method::PUT,
-                    axum::http::Method::DELETE,
-                ])
-                .allow_headers([
-                    axum::http::header::CONTENT_TYPE,
-                    axum::http::header::AUTHORIZATION,
-                ]),
-        )
+/// 创建 CORS 中间件 Layer
+/// CorsLayer 是一个 Layer，不是中间件函数，需要直接作为 Layer 使用
+pub fn create_cors_layer() -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin("*".parse::<HeaderValue>().unwrap())
+        .allow_methods([
+            axum::http::Method::GET,
+            axum::http::Method::POST,
+            axum::http::Method::PUT,
+            axum::http::Method::DELETE,
+            axum::http::Method::OPTIONS, // 预检请求需要 OPTIONS 方法
+        ])
+        .allow_headers([
+            axum::http::header::CONTENT_TYPE,
+            axum::http::header::AUTHORIZATION,
+        ])
+        .allow_credentials(false) // 如果允许 credentials，需要明确指定 origin
 }

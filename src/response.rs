@@ -3,10 +3,12 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
+use chrono::Utc;
+use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
 
 /// 统一的 API 响应结构
-/// 
+///
 /// 所有 API 响应都遵循这个格式，方便前端统一处理：
 /// ```json
 /// {
@@ -36,7 +38,7 @@ impl<T> ApiResponse<T> {
             code: 200,
             message: "success".to_string(),
             data: Some(data),
-            timestamp: chrono::Utc::now().to_rfc3339(),
+            timestamp: Self::get_timestamp(),
         }
     }
 
@@ -46,7 +48,7 @@ impl<T> ApiResponse<T> {
             code: 200,
             message: message.into(),
             data: Some(data),
-            timestamp: chrono::Utc::now().to_rfc3339(),
+            timestamp: Self::get_timestamp(),
         }
     }
 
@@ -56,7 +58,7 @@ impl<T> ApiResponse<T> {
             code: 200,
             message: "success".to_string(),
             data: None,
-            timestamp: chrono::Utc::now().to_rfc3339(),
+            timestamp: Self::get_timestamp(),
         }
     }
 
@@ -66,8 +68,15 @@ impl<T> ApiResponse<T> {
             code,
             message: message.into(),
             data: None,
-            timestamp: chrono::Utc::now().to_rfc3339(),
+            timestamp: Self::get_timestamp(),
         }
+    }
+
+    fn get_timestamp() -> String {
+        let utc = Utc::now();
+        let china_offset = FixedOffset::east_opt(8 * 3600).unwrap(); // UTC+8
+        let china_time: DateTime<FixedOffset> = utc.with_timezone(&china_offset);
+        china_time.to_rfc3339()
     }
 }
 
@@ -121,4 +130,3 @@ pub fn success_with_message<T>(data: T, message: impl Into<String>) -> ApiRespon
 pub fn error(code: u16, message: impl Into<String>) -> ApiResponse<()> {
     ApiResponse::error(code, message)
 }
-
