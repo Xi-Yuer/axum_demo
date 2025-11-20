@@ -14,7 +14,6 @@ pub mod response;
 pub mod routes;
 pub mod services;
 pub mod utils;
-pub mod handle_error;
 
 use crate::config::Config;
 use axum::extract::FromRef;

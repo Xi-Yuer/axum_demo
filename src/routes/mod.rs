@@ -2,7 +2,7 @@ use crate::AppState;
 use axum::extract::DefaultBodyLimit;
 use axum::Router;
 use std::time::Duration;
-use tower_http::{compression::CompressionLayer, timeout::TimeoutLayer, trace::TraceLayer};
+use tower_http::{compression::CompressionLayer, timeout::TimeoutLayer};
 
 /// 文章路由模块
 mod articles;
@@ -34,13 +34,16 @@ pub fn create_router(state: AppState) -> Router {
         .nest("/", health::routes())
         // API 路由（统一使用 /api 前缀）
         .nest("/api", api_routes())
-        // 应用全局中间件（CORS 和日志追踪）
+        // 1. CORS - 最外层，需要处理预检请求（OPTIONS），应该最早处理
         .layer(crate::middleware::create_cors_layer())
+        // 2. TraceLayer - 日志追踪，应该早执行以便记录所有请求和响应
         .layer(crate::trace_layer!())
-        .layer(TraceLayer::new_for_http())
-        .layer(CompressionLayer::new())
+        // 3. TimeoutLayer - 超时控制，应该在业务逻辑之前，避免长时间运行的请求
         .layer(TimeoutLayer::new(Duration::from_secs(10)))
+        // 4. DefaultBodyLimit - 请求体大小限制，应该在解析请求体之前
         .layer(DefaultBodyLimit::max(1024 * 5))
+        // 5. CompressionLayer - 压缩，应该在响应生成之后（最内层），压缩最终响应
+        .layer(CompressionLayer::new())
         // 状态共享
         .with_state(state)
 }
