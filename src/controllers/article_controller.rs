@@ -2,7 +2,7 @@ use crate::errors::Result;
 use crate::extractors::{AuthUser, OptionalAuthUser, Pagination};
 use crate::models::{ArticleResponse, CreateArticleRequest};
 use crate::response::ApiResponse;
-use crate::services::article_service;
+use crate::services::{article_service, PagedResult};
 use crate::AppState;
 use axum::{
     extract::{Path, Query, State},
@@ -31,14 +31,14 @@ pub async fn list_articles(
     State(state): State<AppState>,
     Query(pagination): Query<Pagination>,
     optional_user: OptionalAuthUser,
-) -> Result<ApiResponse<serde_json::Value>> {
+) -> Result<ApiResponse<PagedResult<Vec<ArticleResponse>>>> {
     let result =
         article_service::list_articles(&state.db, pagination, optional_user.user_id()).await?;
 
-    Ok(ApiResponse::success(serde_json::json!({
-        "list": result.list,
-        "pagination": result.pagination,
-    })))
+    Ok(ApiResponse::success(PagedResult {
+        list: result.list,
+        pagination: result.pagination,
+    }))
 }
 
 /// 根据 ID 获取文章（简单方式）
@@ -67,7 +67,7 @@ pub async fn get_article(
 /// 创建文章（需要认证）
 pub async fn create_article(
     State(state): State<AppState>,
-    auth_user: AuthUser,  // 直接使用 AuthUser，更清晰
+    auth_user: AuthUser, // 直接使用 AuthUser，更清晰
     Json(payload): Json<CreateArticleRequest>,
 ) -> Result<ApiResponse<ArticleResponse>> {
     let article = article_service::create_article(&state.db, auth_user.user_id, payload).await?;
