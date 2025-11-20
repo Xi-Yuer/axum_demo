@@ -14,10 +14,11 @@ pub mod response;
 pub mod routes;
 pub mod services;
 pub mod utils;
+pub mod handle_error;
 
+use crate::config::Config;
 use axum::extract::FromRef;
 use sea_orm::DatabaseConnection;
-use crate::config::Config;
 
 /// 应用状态（共享状态）
 #[derive(Clone)]
@@ -37,4 +38,3 @@ impl FromRef<AppState> for Config {
         state.config.clone()
     }
 }
-

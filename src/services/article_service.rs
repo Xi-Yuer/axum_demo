@@ -33,8 +33,8 @@ pub async fn list_articles(
     Ok(PagedResult {
         list: articles_response,
         pagination: crate::services::user_service::PaginationInfo {
-            page: pagination.page.unwrap_or(1),
-            page_size: pagination.page_size.unwrap_or(10),
+            page: pagination.page,
+            page_size: pagination.page_size,
             total,
             total_pages: (total as f64 / limit as f64).ceil() as u64,
         },

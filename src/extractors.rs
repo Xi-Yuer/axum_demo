@@ -1,37 +1,33 @@
-use axum::{
-    async_trait,
-    extract::FromRequestParts,
-    http::request::Parts,
-};
+use crate::errors::{AppError, Result};
+use axum::{async_trait, extract::FromRequestParts, http::request::Parts};
 use serde::Deserialize;
 use uuid::Uuid;
-use crate::errors::{AppError, Result};
 
 /// 分页参数提取器
 #[derive(Debug, Deserialize)]
 pub struct Pagination {
-    pub page: Option<u64>,
-    pub page_size: Option<u64>,
+    pub page: u64,
+    pub page_size: u64,
 }
 
 impl Default for Pagination {
     fn default() -> Self {
         Self {
-            page: Some(1),
-            page_size: Some(10),
+            page: 1,
+            page_size: 10,
         }
     }
 }
 
 impl Pagination {
     pub fn offset(&self) -> u64 {
-        let page = self.page.unwrap_or(1);
-        let page_size = self.page_size.unwrap_or(10);
+        let page = self.page;
+        let page_size = self.page_size;
         (page.saturating_sub(1)) * page_size
     }
 
     pub fn limit(&self) -> u64 {
-        self.page_size.unwrap_or(10)
+        self.page_size
     }
 }
 
@@ -113,4 +109,3 @@ where
         }
     }
 }
-

@@ -26,7 +26,7 @@ pub async fn list_users(
     db: &DatabaseConnection,
     pagination: Pagination,
 ) -> Result<PagedResult<Vec<UserResponse>>> {
-    let page = pagination.page.unwrap_or(1);
+    let page = pagination.page;
     let page_size = pagination.limit();
     
     let (users, total) = user_repository::find_all_with_pagination(db, page, page_size).await?;
@@ -36,8 +36,8 @@ pub async fn list_users(
     Ok(PagedResult {
         list: users_response,
         pagination: PaginationInfo {
-            page: pagination.page.unwrap_or(1),
-            page_size: pagination.page_size.unwrap_or(10),
+            page: pagination.page,
+            page_size: pagination.page_size,
             total,
             total_pages: (total as f64 / page_size as f64).ceil() as u64,
         },

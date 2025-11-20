@@ -7,7 +7,7 @@ edition = "2021"
 # Web 框架
 axum = { version = "0.7", features = ["macros"] }
 tokio = { version = "1", features = ["full"] }
-tower = "0.4"
+tower = { version = "0.4", features = ["timeout"] }
 tower-http = { version = "0.5", features = ["cors", "trace", "compression-gzip", "fs", "timeout"] }
 
 # 数据库 ORM

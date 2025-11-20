@@ -14,10 +14,7 @@ use uuid::Uuid;
 pub async fn list_users(
     State(state): State<AppState>,
     Query(pagination): Query<Pagination>,
-    auth_user: AuthUser,
 ) -> Result<ApiResponse<serde_json::Value>> {
-    println!("{}", auth_user.username);
-
     let result = user_service::list_users(&state.db, pagination).await?;
 
     Ok(ApiResponse::success(serde_json::json!({
